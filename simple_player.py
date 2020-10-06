@@ -10,7 +10,7 @@ import time
 def check_falling():
     print(locomotion.read_standing_status())
 
-if __name__ == __name__:
+if __name__ == "__main__": 
     print("Number of cpu : ", multiprocessing.cpu_count())
 
     parser = argparse.ArgumentParser(description='Enter Comports : con, head, cam' )
@@ -30,22 +30,14 @@ if __name__ == __name__:
     visionManager = VisionManager(args.head, 115200, args.camera)
 
 
-
     visionManager.enablePanTilt()
     visionManager.setPosition("pan", 0)
     visionManager.setPosition("tilt", 0)
     time.sleep(1)
 
-    #print(visionManager.getPosition("pan"))
-    #print(visionManager.getPosition("pan"))
-
-    # visionManager.run_full_scan()
-
-    # print(visionManager.getPosition("pan"))
-    # print(visionManager.getPosition("pan"))
 
 
-    visionManager.open_camera_process()
+    #visionManager.open_camera_process()
 
     time.sleep(2)
     visionManager.run_full_scan()

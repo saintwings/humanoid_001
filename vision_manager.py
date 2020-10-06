@@ -5,6 +5,7 @@ import cv2
 import subprocess
 import multiprocessing 
 from dynamixel_control2 import Dynamixel
+from object_detection import ObjectDetection
 
 scan_path_001 = [[-90, 0], [90, 0]] #[pan, tilt]
 scan_path_002 = [[90, 45], [-90, 45]] #[pan, tilt]
@@ -26,11 +27,13 @@ class VisionManager:
 
         self.connect_dynamixel()
 
+
         
 
     def open_camera_process(self):
-        self.camera_process = multiprocessing.Process(target=self.test_camera,
-                    args=(self.camera_comport,))
+        self.objectDetection = ObjectDetection(self.camera_comport)
+        self.camera_process = multiprocessing.Process(target=self.objectDetection.color_tracking,
+                    args=())
         
         self.camera_process.start()
     
@@ -133,3 +136,4 @@ class VisionManager:
         # When everything done, release the capture
         cap.release()
         cv2.destroyAllWindows()
+
