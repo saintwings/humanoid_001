@@ -4,17 +4,25 @@ import time
 class Dynamixel:
     def __init__(self, com, baud):
         self.str_comport = com
-        self.str_baudrate = baud
+        self.baudrate = baud
+        print("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$")
+        print("Initial Dynamixel : comport = " + self.str_comport + " , baudrate = " + str(self.baudrate))
+        try:
+            self.connect()
+            print("Dynamixel initial successfully + + +")
+        except Exception as e:
+            print(e)
+            print("Dynamixel initial fail!!")
 
     def connect(self):
-        self.serialDevice = serial.Serial(port = self.str_comport, baudrate = self.str_baudrate, timeout=0)
+        self.serialDevice = serial.Serial(port = self.str_comport, baudrate = self.baudrate, timeout=0)
 
 
 
     def setWritePackage(self,ID,address,bytes,data):
         length = bytes + 2 + 3
         TxBuf = [0xff, 0xff, 0xfd, 0x00, ID, length & 0xff, (length >> 8) & 0xff, 0x03, address & 0xff, (address >>8) & 0xff]
-        print("byte =",bytes, type(bytes))
+        #print("byte =",bytes, type(bytes))
         for i in range(0,bytes):
             
             TxBuf.append(data[i])
@@ -27,7 +35,7 @@ class Dynamixel:
             self.serialDevice.write(TxBuf)
         except:
             print("Serial Error!! [setWriteMotorPacket]")
-        print(TxBuf)
+        #print(TxBuf)
 
         
 
@@ -38,28 +46,28 @@ class Dynamixel:
         readPackage.append(CRC & 0x00FF)
         readPackage.append((CRC >> 8) & 0x00FF)
 
-        print("ReadPackage = ", [hex(x) for x in readPackage])
+        #print("ReadPackage = ", [hex(x) for x in readPackage])
 
        
         try:
             self.serialDevice.write(readPackage)
         except:
             print("Serial Error!! [setReadMotorPacket]")
-        print(readPackage)
+        #print(readPackage)
 
-    def getMotorQueryResponse( self, deviceID, Length ):
+    def getMotorQueryResponse( self, deviceID ):
 
             queryData = 0
-            responsePacketSize = 16
-            #responsePacket = readAllData(serialDevice)
+            responsePacketSize = 15
+
             responsePacket = self.serialDevice.read(self.serialDevice.inWaiting())
-            time.sleep(0.2)
-            print("len responsePacket = ", len(responsePacket))
-            print("responsePacket",responsePacket)
+
+            #print("len responsePacket = ", len(responsePacket))
+            #print("responsePacket",responsePacket)
 
             if len(responsePacket) == responsePacketSize:
 
-                print("responsePacket=", responsePacket)
+                #print("responsePacket=", responsePacket)
 
                 responseID = responsePacket[4]
                 errorByte = responsePacket[8]
@@ -69,33 +77,40 @@ class Dynamixel:
                     queryData = responsePacket[9] + 256 * responsePacket[10]
 
                 else:
-                    print("Error response:", responseID, errorByte)
+                    pass
+                    #print("Error response:", responseID, errorByte)
 
                 responsePacketStatue = True
 
             else:
                 responsePacketStatue = False
 
-            print("queryData=", queryData)
+            #print("queryData=", queryData)
             return queryData,responsePacketStatue
 
     def get(self,deviceID, address, Length):
 
             for i in range(0,5):
                 self.setReadMotorPacket(deviceID, address, Length)
-                #time.sleep(0.02)
-                data, status = self.getMotorQueryResponse(deviceID, Length)
+                time.sleep(0.02)
+                data, status = self.getMotorQueryResponse(deviceID)
 
                 if status == True:
                     break
                 else:
+                    pass
                     print("motor ID " + str(deviceID) + "  no response " + str(i))
 
             return data
 
     def getMotorPosition(self,id):
             data = self.get(id,0x84,4)
-            print("motor ",id,"position",data)
+            #print("motor ",id,"position",data)
+            return data
+    
+    def getMotorVelocity(self,id):
+            data = self.get(id,0x68,4)
+            #print("motor ",id,"velocity",data)
             return data
 
     def rxPacketConversion( self,value ):
@@ -127,13 +142,18 @@ class Dynamixel:
     def setEnableMotorTurque(self,deviceID):
         torque_status = [1]
         self.setWritePackage(deviceID ,0x40,1,torque_status)
+    
 
 
     def setDeviceMoving( self,deviceID, deviceType, goalPos, goalSpeed, maxTorque):
-        print("goal pos = ",goalPos)
+        #print("goal pos = ",goalPos)
         position = [goalPos & 0xff, (goalPos >> 8) & 0xff, 0x00, 0x00]
         self.setWritePackage(deviceID ,0x74,4,position)
 
+
+    def setDeviceVelocity(self, deviceID, goalSpeed):
+        speed = [goalSpeed & 0xff, (goalSpeed >> 8) & 0xff, 0x00, 0x00]
+        self.setWritePackage(deviceID ,0x68,4,speed)
 
 
     def InterpolateMotorValue(self,finish_value,start_value,finish_time,start_time,current_time):
