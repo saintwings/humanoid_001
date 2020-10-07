@@ -9,13 +9,17 @@ from dynamixel_control2 import Dynamixel
 from object_detection import ObjectDetection
 import copy
 
-scan_path_001 = [[0, 0], [-90, 0], 3] #[pan, tilt, step_amount]
-scan_path_002 = [[-90, 45], [90, 45], 6] #[pan, tilt, step_amount]
-scan_path_003 = [[90, 0], [0, 0], 3] #[pan, tilt, step_amount]
-#scan_step_amount = 6
+screen_size = [640, 480]
+
 wait_time_motorMove = 0.3
 confirm_object_loop_amount = 10
 confirm_object_score_qualifier = 7
+
+
+#####- defind scan paths  -#####
+scan_path_001 = [[0, 0], [-90, 0], 3] ##[start[pan,tilt], final[pan,tilt], step_amount]
+scan_path_002 = [[-90, 45], [90, 45], 6] ##[start[pan,tilt], final[pan,tilt], step_amount]
+scan_path_003 = [[90, 0], [0, 0], 3] ##[start[pan,tilt], final[pan,tilt], step_amount]
 
 scan_paths = []
 scan_paths.append(scan_path_001)
@@ -29,7 +33,6 @@ class VisionManager:
 
         self.motors = {"pan":41, "tilt":42}
 
-
         self.str_comport = com
         self.baudrate = baud
         self.camera_comport = camera_comport
@@ -39,9 +42,8 @@ class VisionManager:
 
 
         
-
     def open_object_tracking_process(self):
-        self.objectDetection = ObjectDetection(self.camera_comport, self.robot_state)
+        self.objectDetection = ObjectDetection(self.camera_comport, screen_size, self.robot_state)
         self.camera_process = threading.Thread(target=self.objectDetection.color_tracking,
                     args=())
 
@@ -81,8 +83,10 @@ class VisionManager:
 
 
 
-    # def follow_object(self):
-    #     while True:
+    def follow_object(self):
+        while True:
+            object_position_x = self.robot_state[2][0]
+            onjecti_position_y = self.robot_state[2][1]
 
 
 

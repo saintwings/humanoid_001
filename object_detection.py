@@ -4,9 +4,10 @@ import subprocess
 import imutils
 
 class ObjectDetection():
-    def __init__(self, camera_comport, robot_state):
+    def __init__(self, camera_comport, screen_size, robot_state):
 
         self.camera_comport = camera_comport
+        self.screen_size = screen_size
         self.object_position_x = None
         self.object_position_y = None
         self.robot_state = robot_state
@@ -15,8 +16,8 @@ class ObjectDetection():
 
     def test_camera(self):
         cap = cv2.VideoCapture(self.camera_comport)
-        cap.set(3, 640)
-        cap.set(4, 480)
+        cap.set(3, self.screen_size[0])
+        cap.set(4, self.screen_size[1])
         subprocess.call(["v4l2-ctl", "-c", "focus_auto=0"]) ##trun off auto focus##
 
         while(True):
