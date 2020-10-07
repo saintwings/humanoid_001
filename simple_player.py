@@ -44,6 +44,7 @@ if __name__ == "__main__":
 
     time.sleep(2)
     visionManager.run_full_scan()
+    visionManager.follow_object()
 
 
 

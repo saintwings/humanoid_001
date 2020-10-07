@@ -99,7 +99,7 @@ class Dynamixel:
                     break
                 else:
                     pass
-                    print("motor ID " + str(deviceID) + "  no response " + str(i))
+                    #print("motor ID " + str(deviceID) + "  no response " + str(i))
 
             return data
 

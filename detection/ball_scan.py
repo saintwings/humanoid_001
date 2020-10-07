@@ -11,6 +11,18 @@ import platform
 import cv2
 import numpy as np
 import imutils
+import v4l2capture
+import os
+import select
+
+#width, height = 1920, 1080
+width, height = 1280, 720
+WINDOW_NAME = "Preview"
+full_screen = False
+MODEL = 'models/output_tflite_graph_edgetpu.tflite'
+LABEL = 'models/label.txt'
+THRESHOLD = 0.4
+COUNT = 1 # Number of times to run inference
 
 def load_labels(path, encoding='utf-8'): #Returns: Dictionary mapping indices to labels.
   with open(path, 'r', encoding=encoding) as f:
@@ -40,32 +52,23 @@ def draw_objects(draw, objs, labels):
 
 
 def main():
-  width, height = 1920, 1080
-  WINDOW_NAME = "Preview"
-  full_screen = False
-  MODEL = 'models/output_tflite_graph_edgetpu.tflite'
-  LABEL = 'models/label.txt'
-  THRESHOLD = 0.4
-  COUNT = 1 # Number of times to run inference
-
   labels = load_labels(LABEL)
   interpreter = make_interpreter(MODEL)
   interpreter.allocate_tensors()
-
-  cap = cv2.VideoCapture("b.mp4")
-  # cv2.VideoCaptureModes = 1
-  # cap.set(3, width)
-  # cap.set(4, height)
-  # cap.set(5, 30)
-  # print(cap.get(cv2.CAP_PROP_FORMAT))
-  # print(cap.get(cv2.CAP_PROP_SETTINGS))
-  # print(cap.get(cv2.CAP_PROP_MODE))
-  # cap.set(cv2.CAP_PROP_MODE, 1.0)
+  cap = v4l2capture.Video_device("/dev/video0")
+  size_x, size_y = cap.set_format(width, height, fourcc='MJPG')
+  cap.create_buffers(1)
+  cap.queue_all_buffers()
+  cap.start()
   while True:
-    ret, img = cap.read()
-    if not ret: break
+    select.select((cap,), (), ())
+    image_data = cap.read_and_queue()
+    img = cv2.imdecode(np.frombuffer(image_data, dtype=np.uint8), cv2.IMREAD_COLOR)
     image = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
     image = Image.fromarray(image) # image.size = (width, height)
+    if image.size != (width, height):
+        img = imutils.resize(img, height=height, width=width)
+        image = image.resize((width, height))
     scale = detect.set_input(interpreter, (width, height), lambda size: image.resize(size, Image.ANTIALIAS))
 
     inference_time = 0

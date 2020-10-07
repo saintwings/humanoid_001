@@ -7,7 +7,9 @@ import subprocess
 import threading
 from dynamixel_control2 import Dynamixel
 from object_detection import ObjectDetection
+from pid_control import PID_Control
 import copy
+
 
 screen_size = [640, 480]
 
@@ -27,6 +29,17 @@ scan_paths.append(scan_path_002)
 scan_paths.append(scan_path_003)
 
 
+#####- PID control Parameters -#####
+kp_pan = 0.06
+ki_pan = 0
+kd_pan = 0
+
+kp_tilt = 0.06
+ki_tilt = 0
+kd_tilt = 0
+
+dt = 0.02
+
 
 class VisionManager:
     def __init__(self, com, baud, camera_comport, robot_state):
@@ -38,12 +51,23 @@ class VisionManager:
         self.camera_comport = camera_comport
         self.robot_state = robot_state
 
+        self.dt = dt
+
         self.connect_dynamixel()
+        self.pid_pan = PID_Control(kp_pan, ki_pan, kd_pan, self.dt)
+        self.pid_tilt = PID_Control(kp_tilt, ki_tilt, kd_tilt, self.dt)
+
+        self.screen_size = screen_size
+
+        self.screen_center_x = self.screen_size[0]/2
+        self.screen_center_y = self.screen_size[1]/2
+
+        
 
 
         
     def open_object_tracking_process(self):
-        self.objectDetection = ObjectDetection(self.camera_comport, screen_size, self.robot_state)
+        self.objectDetection = ObjectDetection(self.camera_comport, self.screen_size, self.robot_state)
         self.camera_process = threading.Thread(target=self.objectDetection.color_tracking,
                     args=())
 
@@ -84,9 +108,33 @@ class VisionManager:
 
 
     def follow_object(self):
+        
+
+        
         while True:
+            
             object_position_x = self.robot_state[2][0]
-            onjecti_position_y = self.robot_state[2][1]
+            object_position_y = self.robot_state[2][1]
+
+            if object_position_x == None:
+                print("Object disappear!!")
+            else:
+                motor_position_x = self.getPosition("pan")
+                motor_position_y = self.getPosition("tilt")
+
+                motor_position_next_x = motor_position_x + self.pid_pan.update(self.screen_center_x, object_position_x)
+                if (motor_position_next_x > 90): motor_position_next_x = 90
+                elif (motor_position_next_x < -90): motor_position_next_x = -90
+                motor_position_next_y = motor_position_y + (-1)*self.pid_tilt.update(self.screen_center_y, object_position_y)
+                if (motor_position_next_y > 45): motor_position_next_y = 45
+                elif (motor_position_next_y < -45): motor_position_next_y = -45
+
+                self.setPosition("pan", motor_position_next_x)
+                self.setPosition("tilt", motor_position_next_y)
+
+
+            time.sleep(self.dt)
+
 
 
 

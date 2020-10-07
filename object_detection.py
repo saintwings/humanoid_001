@@ -39,8 +39,8 @@ class ObjectDetection():
         greenUpper = (64, 255, 255)
 
         cap = cv2.VideoCapture(self.camera_comport)
-        cap.set(3, 640)
-        cap.set(4, 480)
+        cap.set(3, self.screen_size[0])
+        cap.set(4, self.screen_size[1])
         subprocess.call(["v4l2-ctl", "-c", "focus_auto=0"]) ##trun off auto focus##
         subprocess.call(["v4l2-ctl", "-c", "white_balance_temperature_auto=0"]) ##trun off auto white_balance##
 
@@ -82,9 +82,11 @@ class ObjectDetection():
                 self.object_position_y = None
 
             cv2.imshow('frame',frame)
-            #print("x = ",self.object_position_x," y = ",self.object_position_y)
+
+            #### report output to server ####
             self.robot_state[2][0] = self.object_position_x
             self.robot_state[2][1] = self.object_position_y
+            #### report output to server ####
 
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
