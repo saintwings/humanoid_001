@@ -40,7 +40,7 @@ if __name__ == "__main__":
     #####-  -#####
 
 
-    visionManager.open_camera_process()
+    visionManager.open_object_tracking_process()
 
     time.sleep(2)
     visionManager.run_full_scan()
