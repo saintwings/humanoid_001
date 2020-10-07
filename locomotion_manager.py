@@ -1,5 +1,6 @@
 import serial
 import time
+import threading
 
 class Locomotion:
     def __init__(self, com, baud, robot_state):
@@ -18,21 +19,32 @@ class Locomotion:
     def connect(self):
         self.serialDevice = serial.Serial(port = self.str_comport, baudrate = self.baudrate, timeout=0)
 
+    
+    def open_standing_tracking_process(self):
+        self.standing_tracking_process = threading.Thread(target=self.read_standing_status,args=())
+
+        self.standing_tracking_process.start()
+    
+    
     def read_standing_status(self):
-        responsePacket_length = 7
-        package = [255,255,1,4,2,3,1,244]
-        self.serialDevice.write(package)
-        responsePacket = self.serialDevice.read(self.serialDevice.inWaiting())
-        #print("responsePacket=", responsePacket)
-        #print("responsePacket length=", len(responsePacket))
-        if(len(responsePacket) == responsePacket_length):
-            return responsePacket[5]
-            # if(responsePacket[5] == 0):
-            #     print("robot standing")
-            # else:
-            #     print("robot falling " + str(responsePacket[5]))
-        else:
-            return None
+        while True:
+            responsePacket_length = 7
+            package = [255,255,1,4,2,3,1,244]
+            self.serialDevice.write(package)
+            responsePacket = self.serialDevice.read(self.serialDevice.inWaiting())
+            #print("responsePacket=", responsePacket)
+            #print("responsePacket length=", len(responsePacket))
+            if(len(responsePacket) == responsePacket_length):
+                # if(responsePacket[5] == 0):
+                #     print("robot standing")
+                # else:
+                #     print("robot falling " + str(responsePacket[5]))
+                ##### return to server #####
+                self.robot_state[0] = responsePacket[5]
+            else:
+                self.robot_state[0] = None
+            time.sleep(0.2)
+
     
     def sit(self):
         package = [255,255,1,4,3,2,51,194]

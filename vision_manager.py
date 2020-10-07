@@ -3,12 +3,13 @@ import time
 import numpy as np
 import cv2
 import subprocess
-#import multiprocessing 
 import threading
+import copy
+
 from dynamixel_control2 import Dynamixel
 from object_detection import ObjectDetection
 from pid_control import PID_Control
-import copy
+
 
 
 screen_size = [640, 480]
@@ -68,14 +69,14 @@ class VisionManager:
         
     def open_object_tracking_process(self):
         self.objectDetection = ObjectDetection(self.camera_comport, self.screen_size, self.robot_state)
-        self.camera_process = threading.Thread(target=self.objectDetection.color_tracking,
+        self.object_tracking_process = threading.Thread(target=self.objectDetection.color_tracking,
                     args=())
 
-        self.camera_process.start()
+        self.object_tracking_process.start()
 
     
     def close_object_tracking_process(self):
-        self.camera_process.join()
+        self.object_tracking_process.join()
 
     def run_full_scan(self):
         self.run_scan_paths(scan_paths)
@@ -108,46 +109,48 @@ class VisionManager:
 
 
     def follow_object(self):
-        
-
-        
-        while True:
             
-            object_position_x = self.robot_state[2][0]
-            object_position_y = self.robot_state[2][1]
+        object_position_x = self.robot_state[2][0]
+        object_position_y = self.robot_state[2][1]
 
-            if object_position_x == None:
-                print("Object disappear!!")
-            else:
-                motor_position_x = self.getPosition("pan")
-                motor_position_y = self.getPosition("tilt")
+        if object_position_x == None:
+            #print("Object disappear!!")
+            pass
+        else:
+            motor_position_x = self.getPosition("pan")
+            motor_position_y = self.getPosition("tilt")
 
-                motor_position_next_x = motor_position_x + self.pid_pan.update(self.screen_center_x, object_position_x)
-                if (motor_position_next_x > 90): motor_position_next_x = 90
-                elif (motor_position_next_x < -90): motor_position_next_x = -90
-                motor_position_next_y = motor_position_y + (-1)*self.pid_tilt.update(self.screen_center_y, object_position_y)
-                if (motor_position_next_y > 45): motor_position_next_y = 45
-                elif (motor_position_next_y < -45): motor_position_next_y = -45
+            motor_position_next_x = motor_position_x + self.pid_pan.update(self.screen_center_x, object_position_x)
+            if (motor_position_next_x > 90): motor_position_next_x = 90
+            elif (motor_position_next_x < -90): motor_position_next_x = -90
+            motor_position_next_y = motor_position_y + (-1)*self.pid_tilt.update(self.screen_center_y, object_position_y)
+            if (motor_position_next_y > 45): motor_position_next_y = 45
+            elif (motor_position_next_y < -45): motor_position_next_y = -45
 
-                self.setPosition("pan", motor_position_next_x)
-                self.setPosition("tilt", motor_position_next_y)
-
-
-            time.sleep(self.dt)
+            self.setPosition("pan", motor_position_next_x)
+            self.setPosition("tilt", motor_position_next_y)
 
 
+        time.sleep(self.dt)
+
+    def check_falling_state(self):
+        falling_state = self.robot_state[0]
+        if(falling_state == 0):
+            return False
+        else:
+            return True
 
 
     def run_scan_paths(self, scan_paths):
 
-        print(scan_paths)
+        #print(scan_paths)
 
         self.found_something = False
 
         
         
         for path in scan_paths:
-            print(path)
+            #print(path)
 
             ## set motors ready position ##
             self.setPosition("pan", path[0][0])
@@ -160,7 +163,7 @@ class VisionManager:
             scan_position = copy.deepcopy(path[0])
 
             for i in range(path[2] + 1):
-
+                
                 
                 scan_wait_motor_move = threading.Thread(target=self.check_object_wait_motor_move_timeout)
 
@@ -175,12 +178,17 @@ class VisionManager:
                 if (self.found_something == True):
                     #print("score = ",self.confirm_found_object())
                     if(self.confirm_found_object()):
+                        self.robot_state[1][0] = 2
+                        self.robot_state[1][1] = 0
                         break
                 
                 scan_position[0] += step_size[0]
                 scan_position[1] += step_size[1] 
+
+                if (self.check_falling_state()):
+                    break
             
-            if(self.confirm_found_object()):
+            if(self.confirm_found_object() or self.check_falling_state()):
                 break
         
         
