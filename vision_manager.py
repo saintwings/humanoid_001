@@ -3,20 +3,24 @@ import time
 import numpy as np
 import cv2
 import subprocess
-import multiprocessing 
+#import multiprocessing 
+import threading
 from dynamixel_control2 import Dynamixel
 from object_detection import ObjectDetection
 
 scan_path_001 = [[-90, 0], [90, 0]] #[pan, tilt]
 scan_path_002 = [[90, 45], [-90, 45]] #[pan, tilt]
 scan_step_amount = 6
+wait_time_motorMove = 0.4
+confirm_object_loop_amount = 10
+confirm_object_score_qualifier = 7
 
 scan_paths = []
 scan_paths.append(scan_path_001)
 scan_paths.append(scan_path_002)
 
 class VisionManager:
-    def __init__(self, com, baud, camera_comport):
+    def __init__(self, com, baud, camera_comport, robot_state):
 
         self.motors = {"pan":41, "tilt":42}
 
@@ -24,6 +28,7 @@ class VisionManager:
         self.str_comport = com
         self.baudrate = baud
         self.camera_comport = camera_comport
+        self.robot_state = robot_state
 
         self.connect_dynamixel()
 
@@ -31,11 +36,12 @@ class VisionManager:
         
 
     def open_camera_process(self):
-        self.objectDetection = ObjectDetection(self.camera_comport)
-        self.camera_process = multiprocessing.Process(target=self.objectDetection.color_tracking,
+        self.objectDetection = ObjectDetection(self.camera_comport, self.robot_state)
+        self.camera_process = threading.Thread(target=self.objectDetection.color_tracking,
                     args=())
-        
+
         self.camera_process.start()
+
     
     def close_camera_process(self):
         self.camera_process.join()
@@ -43,9 +49,40 @@ class VisionManager:
     def run_full_scan(self):
         self.run_scan_paths(scan_paths, scan_step_amount)
 
+    def check_object_wait_motor_move_timeout(self):
+
+        while True:
+            self.check_object()
+            time.sleep(0.02)
+        
+        return
+    
+    def check_object(self):
+        if self.robot_state[2][0] != None:
+            self.found_something = True
+            return 1
+        else:
+            return 0
+    
+    def confirm_found_object(self):
+        score = 0
+        for i in range (0,confirm_object_loop_amount):
+            score += self.check_object()
+        
+        if score > confirm_object_score_qualifier:
+            return True
+        else:
+            return False
+
+
+
+
+
+
     def run_scan_paths(self, scan_paths, scan_step_amount):
 
-    
+        self.found_something = False
+        
         for path in scan_paths:
             ## set motors ready position ##
             self.setPosition("pan", path[0][0])
@@ -56,24 +93,33 @@ class VisionManager:
             step_size = [(path[1][0] - path[0][0])/scan_step_amount, (path[1][1] - path[0][1])/scan_step_amount]
             
             scan_position = path[0]
+
             for i in range(scan_step_amount + 1):
-                print("i = ", scan_position)
+
+                
+                scan_wait_motor_move = threading.Thread(target=self.check_object_wait_motor_move_timeout)
+
+                #print("i = ", scan_position)
                 self.setPosition("pan", scan_position[0])
                 self.setPosition("tilt", scan_position[1])
-                time.sleep(0.25)
-                
-                ## capture ##
 
- 
+                ## set timeout ##
+                
+                scan_wait_motor_move.start()
+                scan_wait_motor_move.join(timeout = wait_time_motorMove)
+                if (self.found_something == True):
+                    print("score = ",self.confirm_found_object())
+                    if(self.confirm_found_object()):
+                        break
+                
                 scan_position[0] += step_size[0]
                 scan_position[1] += step_size[1] 
-        
-        self.close_camera_process()
-        
-    
-    
-                
             
+            if(self.confirm_found_object()):
+                break
+        
+        
+    
     
     def connect_dynamixel(self):
         self.dynamixel = Dynamixel(self.str_comport, self.baudrate)

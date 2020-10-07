@@ -2,9 +2,10 @@ import serial
 import time
 
 class Locomotion:
-    def __init__(self, com, baud):
+    def __init__(self, com, baud, robot_state):
         self.str_comport = com
         self.baudrate = baud
+        self.robot_state = robot_state
         print("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$")
         print("Initial Locomotion : comport = " + self.str_comport + " , baudrate = " + str(self.baudrate))
         try:

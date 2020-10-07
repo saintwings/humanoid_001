@@ -4,12 +4,12 @@ import subprocess
 import imutils
 
 class ObjectDetection():
-    def __init__(self, camera_comport):
+    def __init__(self, camera_comport, robot_state):
 
         self.camera_comport = camera_comport
         self.object_position_x = None
         self.object_position_y = None
-
+        self.robot_state = robot_state
 
         
 
@@ -81,8 +81,9 @@ class ObjectDetection():
                 self.object_position_y = None
 
             cv2.imshow('frame',frame)
-            print("x = ",self.object_position_x," y = ",self.object_position_y)
-
+            #print("x = ",self.object_position_x," y = ",self.object_position_y)
+            self.robot_state[2][0] = self.object_position_x
+            self.robot_state[2][1] = self.object_position_y
 
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
