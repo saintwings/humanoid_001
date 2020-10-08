@@ -103,7 +103,7 @@ class Locomotion:
         self.serialDevice.write(package)
 
     def forward_walk(self, step_flag = False):
-        package = [255,255,1,6,3,5,157,127,127,85]
+        package = [255,255,1,6,3,5,147,127,127,95]
         self.serialDevice.write(package)
         time.sleep(0.1)
         if step_flag == True:
@@ -143,7 +143,7 @@ class Locomotion:
         self.serialDevice.write(package)
     
     def turn_left(self, step_flag = False):
-        package = [255,255,1,6,3,5,127,127,157,85]
+        package = [255,255,1,6,3,5,127,127,147,95]
         self.serialDevice.write(package)
         time.sleep(0.1)
         if step_flag == True:

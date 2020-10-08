@@ -14,7 +14,8 @@ from pid_control import PID_Control
 
 
 
-screen_size = [640, 480]
+#screen_size = [640, 480]
+screen_size = [1280, 720]
 pan_angle_limit = [-90, 90]
 tilt_angle_limit = [-45, 60]
 
@@ -35,11 +36,11 @@ scan_paths.append(scan_path_003)
 
 
 #####- PID control Parameters -#####
-kp_pan = 0.05
+kp_pan = 0.02
 ki_pan = 0
 kd_pan = 0.0001
 
-kp_tilt = 0.05
+kp_tilt = 0.02
 ki_tilt = 0
 kd_tilt = 0.0001
 

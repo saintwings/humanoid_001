@@ -99,6 +99,3 @@ def ball_detection(robot_state):
       else: cv2.setWindowProperty(WINDOW_NAME, cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_NORMAL)
   cv2.destroyAllWindows()
 
-
-if __name__ == '__main__':
-  main()
