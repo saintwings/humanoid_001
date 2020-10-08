@@ -33,9 +33,10 @@ def scan_ball():
         robot_state[1][1] = 0
 
 def follow_ball():
+    robot_main_state = robot_state[1][0]
     robot_sub_state = robot_state[1][1]
     if (robot_sub_state == 0):
-        for i in range(0,10):
+        for i in range(0,5):
             visionManager.follow_object()
         visionManager.update_pantilt_position()
         robot_state[1][1] = 1
@@ -48,8 +49,11 @@ def follow_ball():
         robot_pan_angle = robot_state[3][0]
         robot_tilt_angle = robot_state[3][1]
         robot_locomotion_lock_state = robot_state[1][2]
-        if(robot_locomotion_lock_state == False):
+
+        robot_main_state = robot_state[1][0]
+        if(robot_locomotion_lock_state == False and robot_main_state == 2):
             if(robot_pan_angle > 15):
+                print(robot_state)
                 robot_state[1][3] = "turn_left" ## locomotion command ##  
             elif(robot_pan_angle < -15):
                 robot_state[1][3] = "turn_right" ## locomotion command ##
@@ -70,7 +74,7 @@ def follow_ball():
 
 def enable_locomotion_lock_state():
     robot_state[1][2] = False
-    
+
 def getup():
     print("getup state")
     time.sleep(2)

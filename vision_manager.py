@@ -116,8 +116,19 @@ class VisionManager:
         object_position_y = self.robot_state[2][1]
 
         if object_position_x == None:
-            #print("Object disappear!!")
-            pass
+            if ( self.confirm_found_object() == False ):
+                print("object lost 1")
+                time.sleep(1)
+                if ( self.confirm_found_object() == False ):
+                    print("object lost 2")
+                    self.robot_state[1][3] = "stop"
+                    self.robot_state[1][0] = 1
+                    self.robot_state[1][1] = 0
+                    
+
+
+
+
         else:
             motor_position_x = self.getPosition("pan")
             motor_position_y = self.getPosition("tilt")
