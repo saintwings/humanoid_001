@@ -13,6 +13,8 @@ from pid_control import PID_Control
 
 
 screen_size = [640, 480]
+pan_angle_limit = [-90, 90]
+tilt_angle_limit = [-45, 60]
 
 wait_time_motorMove = 0.3
 confirm_object_loop_amount = 10
@@ -31,13 +33,13 @@ scan_paths.append(scan_path_003)
 
 
 #####- PID control Parameters -#####
-kp_pan = 0.06
+kp_pan = 0.05
 ki_pan = 0
-kd_pan = 0
+kd_pan = 0.0001
 
-kp_tilt = 0.06
+kp_tilt = 0.05
 ki_tilt = 0
-kd_tilt = 0
+kd_tilt = 0.0001
 
 dt = 0.02
 
@@ -121,17 +123,18 @@ class VisionManager:
             motor_position_y = self.getPosition("tilt")
 
             motor_position_next_x = motor_position_x + self.pid_pan.update(self.screen_center_x, object_position_x)
-            if (motor_position_next_x > 90): motor_position_next_x = 90
-            elif (motor_position_next_x < -90): motor_position_next_x = -90
+            if (motor_position_next_x > pan_angle_limit[1]): motor_position_next_x = pan_angle_limit[1]
+            elif (motor_position_next_x < pan_angle_limit[0]): motor_position_next_x = pan_angle_limit[0]
             motor_position_next_y = motor_position_y + (-1)*self.pid_tilt.update(self.screen_center_y, object_position_y)
-            if (motor_position_next_y > 45): motor_position_next_y = 45
-            elif (motor_position_next_y < -45): motor_position_next_y = -45
+            if (motor_position_next_y > tilt_angle_limit[1]): motor_position_next_y = tilt_angle_limit[1]
+            elif (motor_position_next_y < tilt_angle_limit[0]): motor_position_next_y = tilt_angle_limit[0]
 
             self.setPosition("pan", motor_position_next_x)
             self.setPosition("tilt", motor_position_next_y)
 
 
         time.sleep(self.dt)
+
 
     def check_falling_state(self):
         falling_state = self.robot_state[0]
@@ -192,7 +195,9 @@ class VisionManager:
                 break
         
         
-    
+    def update_pantilt_position(self):
+        self.robot_state[3][0] = self.getPosition("pan")
+        self.robot_state[3][1] = self.getPosition("tilt")
     
     def connect_dynamixel(self):
         self.dynamixel = Dynamixel(self.str_comport, self.baudrate)

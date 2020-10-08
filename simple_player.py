@@ -1,4 +1,6 @@
 #import multiprocessing
+import sys
+import signal
 import argparse
 import serial
 from locomotion_manager import Locomotion
@@ -7,6 +9,12 @@ import time
 import threading
 import cv2
 
+
+def signal_handler(sig, frame):
+    print('You pressed Ctrl+C!')
+    robot_state[1][3] = "stop"
+    locomotion.set_locomotion(robot_state[1][3])
+    sys.exit(0)
 
 def report_robot_state():
     while True:
@@ -29,11 +37,40 @@ def follow_ball():
     if (robot_sub_state == 0):
         for i in range(0,10):
             visionManager.follow_object()
-            robot_state[1][1] = 1
+        visionManager.update_pantilt_position()
+        robot_state[1][1] = 1
     elif (robot_sub_state == 1):
-        pass
-    
+        for i in range(0,3):
+            visionManager.follow_object()
+        visionManager.update_pantilt_position()
+        
+        #####- check robot rotation -#####
+        robot_pan_angle = robot_state[3][0]
+        robot_tilt_angle = robot_state[3][1]
+        robot_locomotion_lock_state = robot_state[1][2]
+        if(robot_locomotion_lock_state == False):
+            if(robot_pan_angle > 15):
+                robot_state[1][3] = "turn_left" ## locomotion command ##  
+            elif(robot_pan_angle < -15):
+                robot_state[1][3] = "turn_right" ## locomotion command ##
+            else:
+                if(robot_tilt_angle < 50):
+                    robot_state[1][3] = "forward" ## locomotion command ##
+                else:
+                    robot_state[1][3] = "stop" ## locomotion command ##
 
+            #locomotion.set_locomotion(robot_state[1][3])
+            #####- Lock Locomotion -#####
+            robot_state[1][2] = True
+            enable_timer = threading.Timer(1, enable_locomotion_lock_state)
+            enable_timer.start()
+
+
+
+
+def enable_locomotion_lock_state():
+    robot_state[1][2] = False
+    
 def getup():
     print("getup state")
     time.sleep(2)
@@ -41,6 +78,8 @@ def getup():
 
 if __name__ == "__main__": 
     #print("Number of cpu : ", multiprocessing.cpu_count())
+
+    signal.signal(signal.SIGINT, signal_handler)
 
     parser = argparse.ArgumentParser(description='Enter Comports : con, head, cam' )
     parser.add_argument('--headType',help='motor type on head Mx , Mx ',default='Mx')
@@ -51,8 +90,8 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     #####-  -#####
-    robot_state = [None,[0,0,0,0],[None, None], 0] 
-    ## robot_state = [standing, state[main, sub, b_main, b_sub], object_position[x,y], check_sure_object]
+    robot_state = [None,[0,0, False, None,0,0],[None, None, False], [None, None]] 
+    ## robot_state = [standing, state[main, sub, lock_locomotion, locomotion_command, b_main, b_sub], object_position[x,y,check_sure_object], pantilt_position[pan,tilt]]
 
     #####-  -#####
     locomotion = Locomotion(args.con, 115200, robot_state)
@@ -66,15 +105,17 @@ if __name__ == "__main__":
 
     #####-  -#####
     visionManager.open_object_tracking_process()
-    locomotion.open_standing_tracking_process()
+    locomotion.open_run_locomotion_process()
     robot_report = threading.Thread(target=report_robot_state,args=())
     robot_report.start()
 
-
+    #locomotion.set_locomotion(robot_state[1][3])
     time.sleep(2)
 
+    
 
 
+    robot_state[1][3] = "stop"
     robot_state[1][0] = 1
 
 

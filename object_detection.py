@@ -38,15 +38,15 @@ class ObjectDetection():
         greenLower = (29, 86, 6)
         greenUpper = (64, 255, 255)
 
-        cap = cv2.VideoCapture(self.camera_comport)
-        cap.set(3, self.screen_size[0])
-        cap.set(4, self.screen_size[1])
+        self.cap = cv2.VideoCapture(self.camera_comport)
+        self.cap.set(3, self.screen_size[0])
+        self.cap.set(4, self.screen_size[1])
         subprocess.call(["v4l2-ctl", "-c", "focus_auto=0"]) ##trun off auto focus##
         subprocess.call(["v4l2-ctl", "-c", "white_balance_temperature_auto=0"]) ##trun off auto white_balance##
 
 
         while True:
-            ret, frame = cap.read()
+            ret, frame = self.cap.read()
 
             blurred = cv2.GaussianBlur(frame, (11,11), 0)
             hsv = cv2.cvtColor(blurred, cv2.COLOR_BGR2HSV)
@@ -92,5 +92,9 @@ class ObjectDetection():
                 break
 
         # When everything done, release the capture
-        cap.release()
+        self.cap.release()
+        cv2.destroyAllWindows()
+
+    def disconnect(self):
+        self.cap.release()
         cv2.destroyAllWindows()

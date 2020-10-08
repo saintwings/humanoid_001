@@ -20,32 +20,55 @@ class Locomotion:
         self.serialDevice = serial.Serial(port = self.str_comport, baudrate = self.baudrate, timeout=0)
 
     
-    def open_standing_tracking_process(self):
-        self.standing_tracking_process = threading.Thread(target=self.read_standing_status,args=())
+    def open_run_locomotion_process(self):
+        self.locomotion_process = threading.Thread(target=self.run_locomotion_process,args=())
 
-        self.standing_tracking_process.start()
-    
-    
-    def read_standing_status(self):
+        self.locomotion_process.start()
+    def close_run_locomotion_process(self):
+        self.locomotion_process.joint()
+
+    def run_locomotion_process(self):
         while True:
-            responsePacket_length = 7
-            package = [255,255,1,4,2,3,1,244]
-            self.serialDevice.write(package)
-            responsePacket = self.serialDevice.read(self.serialDevice.inWaiting())
-            #print("responsePacket=", responsePacket)
-            #print("responsePacket length=", len(responsePacket))
-            if(len(responsePacket) == responsePacket_length):
-                # if(responsePacket[5] == 0):
-                #     print("robot standing")
-                # else:
-                #     print("robot falling " + str(responsePacket[5]))
-                ##### return to server #####
-                self.robot_state[0] = responsePacket[5]
-            else:
-                self.robot_state[0] = None
-            time.sleep(0.2)
+            self.read_standing_status()
 
+            if(self.robot_state[1][3] != None):
+                self.set_locomotion(self.robot_state[1][3])
+                
+
+
+    def read_standing_status(self):
+        responsePacket_length = 7
+        package = [255,255,1,4,2,3,1,244]
+        self.serialDevice.write(package)
+        time.sleep(0.01)
+        responsePacket = self.serialDevice.read(self.serialDevice.inWaiting())
+        #print("responsePacket status=", responsePacket)
+        #print("responsePacket length=", len(responsePacket))
+        if(len(responsePacket) == responsePacket_length):
+            # if(responsePacket[5] == 0):
+            #     print("robot standing")
+            # else:
+            #     print("robot falling " + str(responsePacket[5]))
+            ##### return to server #####
+            self.robot_state[0] = responsePacket[5]
+        else:
+            self.robot_state[0] = None
     
+
+
+    def set_locomotion(self, locomotion_command):
+
+            if(locomotion_command == "stop"):
+                self.stop_walk()
+            elif(locomotion_command == "forward"):
+                self.forward_walk()
+            elif(locomotion_command == "turn_left"):
+                self.turn_left()
+            elif(locomotion_command == "turn_right"):
+                self.turn_right()
+            time.sleep(0.01)
+            responsePacket = self.serialDevice.read(self.serialDevice.inWaiting())
+
     def sit(self):
         package = [255,255,1,4,3,2,51,194]
         self.serialDevice.write(package)
