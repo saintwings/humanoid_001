@@ -10,6 +10,7 @@ import imutils
 from dynamixel_control2 import Dynamixel
 from object_detection import ObjectDetection
 from pid_control import PID_Control
+from ball_detection_1 import ObjectDetection_2
 
 
 
@@ -71,8 +72,12 @@ class VisionManager:
 
         
     def open_object_tracking_process(self):
-        self.objectDetection = ObjectDetection(self.camera_comport, self.screen_size, self.robot_state)
-        self.object_tracking_process = threading.Thread(target=self.objectDetection.color_tracking,
+        # self.objectDetection = ObjectDetection(self.camera_comport, self.screen_size, self.robot_state)
+        # self.object_tracking_process = threading.Thread(target=self.objectDetection.color_tracking,
+        #             args=())
+
+        self.objectDetection = ObjectDetection_2(self.camera_comport, self.screen_size, self.robot_state)
+        self.object_tracking_process = threading.Thread(target=self.objectDetection.ball_tracking,
                     args=())
 
         self.object_tracking_process.start()
