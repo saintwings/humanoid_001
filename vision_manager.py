@@ -5,6 +5,7 @@ import cv2
 import subprocess
 import threading
 import copy
+import imutils
 
 from dynamixel_control2 import Dynamixel
 from object_detection import ObjectDetection
@@ -16,7 +17,7 @@ screen_size = [640, 480]
 pan_angle_limit = [-90, 90]
 tilt_angle_limit = [-45, 60]
 
-wait_time_motorMove = 0.3
+wait_time_motorMove = 0.5
 confirm_object_loop_amount = 10
 confirm_object_score_qualifier = 7
 
@@ -118,17 +119,13 @@ class VisionManager:
         if object_position_x == None:
             if ( self.confirm_found_object() == False ):
                 print("object lost 1")
-                time.sleep(1)
+                time.sleep(0.8)
                 if ( self.confirm_found_object() == False ):
                     print("object lost 2")
                     self.robot_state[1][3] = "stop"
                     self.robot_state[1][0] = 1
                     self.robot_state[1][1] = 0
                     
-
-
-
-
         else:
             motor_position_x = self.getPosition("pan")
             motor_position_y = self.getPosition("tilt")
@@ -205,7 +202,14 @@ class VisionManager:
             if(self.confirm_found_object() or self.check_falling_state()):
                 break
         
-        
+    def check_object_x_position(self):
+        if(self.robot_state[2][0] != None):
+            x_ratio = (self.screen_center_x - self.robot_state[2][0])/self.screen_center_x
+            y_ratio = (self.screen_center_y - self.robot_state[2][1])/self.screen_center_y
+            return [x_ratio, y_ratio]
+        else:
+            return [None, None]
+
     def update_pantilt_position(self):
         self.robot_state[3][0] = self.getPosition("pan")
         self.robot_state[3][1] = self.getPosition("tilt")
@@ -226,6 +230,12 @@ class VisionManager:
         self.setPosition("pan", 0)
         time.sleep(0.01)
         self.setPosition("tilt", 0)
+        time.sleep(0.01)
+
+    def setLowerCenterPanTilt(self):
+        self.setPosition("pan", 0)
+        time.sleep(0.01)
+        self.setPosition("tilt", 55)
         time.sleep(0.01)
 
     def setPosition(self, motor, value):
@@ -253,22 +263,72 @@ class VisionManager:
 
 
     def test_camera(self, camera_comport):
-        cap = cv2.VideoCapture(camera_comport)
-        cap.set(3, 640)
-        cap.set(4, 480)
+        Lower = (29, 86, 6) ##green
+        Upper = (64, 255, 255)
+        #Lower = (100, 80, 10)
+        #Upper = (200, 130, 250)
+
+        self.cap = cv2.VideoCapture(self.camera_comport)
+        self.cap.set(3, self.screen_size[0])
+        self.cap.set(4, self.screen_size[1])
         subprocess.call(["v4l2-ctl", "-c", "focus_auto=0"]) ##trun off auto focus##
+        subprocess.call(["v4l2-ctl", "-c", "white_balance_temperature_auto=0"]) ##trun off auto white_balance##
 
-        while(True):
-            # Capture frame-by-frame
-            ret, frame = cap.read()
+        while True:
+            ret, frame = self.cap.read()
+            #print(frame.shape)
+            
 
+            blurred = cv2.GaussianBlur(frame, (11,11), 0)
+            hsv = cv2.cvtColor(blurred, cv2.COLOR_BGR2HSV)
+            #print(hsv.shape)
+            print("color = ")
+            print(hsv[240][320][:])
 
-            # Display the resulting frame
+            mask = cv2.inRange(hsv, Lower, Upper)
+            mask = cv2.erode(mask, None, iterations=2)
+            mask = cv2.dilate(mask, None, iterations=2)
+
+            cv2.imshow('mask',mask)
             cv2.imshow('frame',frame)
+
+            cnts = cv2.findContours(mask.copy(), cv2.RETR_EXTERNAL,
+                                        cv2.CHAIN_APPROX_SIMPLE)
+            cnts = imutils.grab_contours(cnts)
+            center = None
+
+            if len(cnts) > 0:
+                c = max(cnts, key=cv2.contourArea)
+                ((x, y), radius) = cv2.minEnclosingCircle(c)
+                M = cv2.moments(c)
+                center = (int(M["m10"] / M["m00"]), int(M["m01"] / M["m00"]))
+
+                if radius > 20:
+                    cv2.circle(frame, (int(x), int(y)), int(radius),(0, 255, 255), 2)
+                    cv2.circle(frame, center, 5, (0, 0, 255), -1)
+                    self.object_position_x = int(x)
+                    self.object_position_y = int(y)
+                else:
+                    self.object_position_x = None
+                    self.object_position_y = None
+
+            else:
+                self.object_position_x = None
+                self.object_position_y = None
+
+            cv2.imshow('frame',frame)
+
+            #### report output to server ####
+            self.robot_state[2][0] = self.object_position_x
+            self.robot_state[2][1] = self.object_position_y
+            #### report output to server ####
+
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
 
         # When everything done, release the capture
-        cap.release()
+        self.cap.release()
         cv2.destroyAllWindows()
 
+
+   

@@ -66,6 +66,11 @@ class Locomotion:
                 self.turn_left()
             elif(locomotion_command == "turn_right"):
                 self.turn_right()
+            elif(locomotion_command == "left_kick"):
+                self.left_kick()
+            elif(locomotion_command == "right_kick"):
+                self.right_kick()
+
             time.sleep(0.01)
             responsePacket = self.serialDevice.read(self.serialDevice.inWaiting())
 
@@ -138,7 +143,7 @@ class Locomotion:
         self.serialDevice.write(package)
     
     def turn_left(self, step_flag = False):
-        package = [255,255,1,6,3,5,127,127,167,75]
+        package = [255,255,1,6,3,5,127,127,157,85]
         self.serialDevice.write(package)
         time.sleep(0.1)
         if step_flag == True:
@@ -148,7 +153,7 @@ class Locomotion:
         self.serialDevice.write(package)
     
     def turn_right(self, step_flag = False):
-        package = [255,255,1,6,3,5,127,127,97,145]
+        package = [255,255,1,6,3,5,127,127,107,135]
         self.serialDevice.write(package)
         time.sleep(0.1)
         if step_flag == True:

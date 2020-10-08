@@ -62,12 +62,49 @@ def follow_ball():
                     robot_state[1][3] = "forward" ## locomotion command ##
                 else:
                     robot_state[1][3] = "stop" ## locomotion command ##
+                    robot_state[1][0] = 3 ## goto main_state 3
 
             #locomotion.set_locomotion(robot_state[1][3])
             #####- Lock Locomotion -#####
             robot_state[1][2] = True
             enable_timer = threading.Timer(1, enable_locomotion_lock_state)
             enable_timer.start()
+
+def prepare_kick():
+    visionManager.setLowerCenterPanTilt()
+    time.sleep(0.5)
+    if robot_state[2][0] != None:
+        time.sleep(1)
+        x_ratio, y_ratio = visionManager.check_object_x_position()
+        print(x_ratio, y_ratio)
+
+        if(x_ratio != None):
+            if(y_ratio < 0.2):
+                if(x_ratio > 0 and x_ratio < 0.8):
+                    print("Left Kick")
+                    robot_state[1][3] = "left_kick"
+                elif(x_ratio < 0 and x_ratio > -0.8):
+                    print("Right Kick")
+                    robot_state[1][3] = "right_kick"
+                else:
+                    robot_state[1][0] = 2
+                    robot_state[1][1] = 0
+            else:
+                robot_state[1][0] = 2
+                robot_state[1][1] = 0
+            
+            
+
+        
+        time.sleep(2)
+        robot_state[1][3] = "stop"
+    else:
+        print("No ball")
+        time.sleep(1)
+        robot_state[1][0] = 1
+        robot_state[1][1] = 0
+
+
 
 
 
@@ -78,6 +115,7 @@ def enable_locomotion_lock_state():
 def getup():
     print("getup state")
     time.sleep(2)
+    
 
 
 if __name__ == "__main__": 
@@ -131,6 +169,7 @@ if __name__ == "__main__":
         #####- check state -#####
         if (robot_main_state == 1): scan_ball()
         elif (robot_main_state == 2): follow_ball()
+        elif (robot_main_state == 3): prepare_kick()
         else: just_stand()
         
         #####- falling -#####

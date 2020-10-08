@@ -19,6 +19,7 @@ class ObjectDetection():
         cap.set(3, self.screen_size[0])
         cap.set(4, self.screen_size[1])
         subprocess.call(["v4l2-ctl", "-c", "focus_auto=0"]) ##trun off auto focus##
+        subprocess.call(["v4l2-ctl", "-c", "white_balance_temperature_auto=0"]) ##trun off auto white_balance##
 
         while(True):
             # Capture frame-by-frame
@@ -35,8 +36,10 @@ class ObjectDetection():
         cv2.destroyAllWindows()
 
     def color_tracking(self):
-        greenLower = (29, 86, 6)
-        greenUpper = (64, 255, 255)
+        Lower = (29, 86, 6)
+        Upper = (64, 255, 255)
+        #Lower = (90, 80, 5)
+        #Upper = (200, 130, 250)
 
         self.cap = cv2.VideoCapture(self.camera_comport)
         self.cap.set(3, self.screen_size[0])
@@ -50,7 +53,7 @@ class ObjectDetection():
 
             blurred = cv2.GaussianBlur(frame, (11,11), 0)
             hsv = cv2.cvtColor(blurred, cv2.COLOR_BGR2HSV)
-            mask = cv2.inRange(hsv, greenLower, greenUpper)
+            mask = cv2.inRange(hsv, Lower, Upper)
             mask = cv2.erode(mask, None, iterations=2)
             mask = cv2.dilate(mask, None, iterations=2)
 
@@ -68,7 +71,7 @@ class ObjectDetection():
                 M = cv2.moments(c)
                 center = (int(M["m10"] / M["m00"]), int(M["m01"] / M["m00"]))
 
-                if radius > 50:
+                if radius > 20:
                     cv2.circle(frame, (int(x), int(y)), int(radius),(0, 255, 255), 2)
                     cv2.circle(frame, center, 5, (0, 0, 255), -1)
                     self.object_position_x = int(x)
