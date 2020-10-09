@@ -14,8 +14,8 @@ from pid_control import PID_Control
 
 
 
-#screen_size = [640, 480]
-screen_size = [1280, 720]
+
+#screen_size = [1280, 720]
 pan_angle_limit = [-90, 90]
 tilt_angle_limit = [-45, 60]
 
@@ -25,9 +25,9 @@ confirm_object_score_qualifier = 7
 
 
 #####- defind scan paths  -#####
-scan_path_001 = [[0, 0], [-90, 0], 3] ##[start[pan,tilt], final[pan,tilt], step_amount]
+scan_path_001 = [[0, 10], [-90, 10], 3] ##[start[pan,tilt], final[pan,tilt], step_amount]
 scan_path_002 = [[-90, 45], [90, 45], 6] ##[start[pan,tilt], final[pan,tilt], step_amount]
-scan_path_003 = [[90, 0], [0, 0], 3] ##[start[pan,tilt], final[pan,tilt], step_amount]
+scan_path_003 = [[90, 10], [0, 10], 3] ##[start[pan,tilt], final[pan,tilt], step_amount]
 
 scan_paths = []
 scan_paths.append(scan_path_001)
@@ -48,7 +48,7 @@ dt = 0.02
 
 
 class VisionManager:
-    def __init__(self, com, baud, camera_comport, robot_state):
+    def __init__(self, com, baud, camera_comport,screen_size, robot_state):
 
         self.motors = {"pan":41, "tilt":42}
 

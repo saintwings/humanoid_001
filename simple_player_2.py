@@ -146,9 +146,12 @@ def just_stand():
 def scan_ball():
     robot_sub_state = robot_state[1][1]
     if (robot_sub_state == 0):
+        robot_state[1][1] = 1
         visionManager.run_full_scan()
     elif (robot_sub_state == 1):
-        time.sleep(2)
+        robot_state[1][3] = "turn_right"
+        time.sleep(4)
+        robot_state[1][3] = "stop"
         robot_state[1][1] = 0
 
 def follow_ball():
@@ -270,7 +273,7 @@ if __name__ == "__main__":
 
     #####-  -#####
     locomotion = Locomotion(args.con, 115200, robot_state)
-    visionManager = VisionManager(args.head, 115200, args.camera, robot_state)
+    visionManager = VisionManager(args.head, 115200, args.camera, [width,height] , robot_state)
 
     #####-  -#####
     visionManager.enablePanTilt()
@@ -287,8 +290,7 @@ if __name__ == "__main__":
     robot_report = threading.Thread(target=report_robot_state,args=())
     robot_report.start()
 
-    # while True:
-    #     time.sleep(2)
+
     time.sleep(2)
 
     
