@@ -19,7 +19,7 @@ screen_size = [1280, 720]
 pan_angle_limit = [-90, 90]
 tilt_angle_limit = [-45, 60]
 
-wait_time_motorMove = 0.5
+wait_time_motorMove = 0.3
 confirm_object_loop_amount = 10
 confirm_object_score_qualifier = 7
 

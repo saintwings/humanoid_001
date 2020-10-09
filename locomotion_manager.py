@@ -70,6 +70,8 @@ class Locomotion:
                 self.left_kick()
             elif(locomotion_command == "right_kick"):
                 self.right_kick()
+            elif(locomotion_command == "getup"):
+                self.getup()
 
             time.sleep(0.01)
             responsePacket = self.serialDevice.read(self.serialDevice.inWaiting())
